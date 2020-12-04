@@ -9,4 +9,3 @@ edition = "2018"
 [dependencies]
 regex = "1.4.2"
 itertools = "0.9.0"
-glam = "0.11.0"
