@@ -107,3 +107,18 @@ pub fn part2(input: &str) -> usize {
         .filter(|p| has_required_keys(p) && has_valid_fields(p))
         .count()
 }
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn part1() {
+        let input = include_str!("input");
+        assert_eq!(super::part1(input), 237);
+    }
+
+    #[test]
+    fn part2() {
+        let input = include_str!("input");
+        assert_eq!(super::part2(input), 172);
+    }
+}

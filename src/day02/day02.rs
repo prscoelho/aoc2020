@@ -55,3 +55,18 @@ pub fn part2(input: &str) -> usize {
     let policies = read_input(input);
     policies.iter().filter(|p| valid_policy2(p)).count()
 }
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn part1() {
+        let input = include_str!("input");
+        assert_eq!(super::part1(input), 424);
+    }
+
+    #[test]
+    fn part2() {
+        let input = include_str!("input");
+        assert_eq!(super::part2(input), 747);
+    }
+}
