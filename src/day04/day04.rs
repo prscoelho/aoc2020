@@ -78,7 +78,7 @@ fn valid_hcl(hcl_unparsed: &str) -> bool {
 const VALID_ECLS: [&str; 7] = ["amb", "blu", "brn", "gry", "grn", "hzl", "oth"];
 
 fn valid_ecl(ecl: &str) -> bool {
-    VALID_ECLS.iter().any(|&eye| eye == ecl)
+    VALID_ECLS.contains(&ecl)
 }
 
 fn valid_pid(pid: &str) -> bool {
