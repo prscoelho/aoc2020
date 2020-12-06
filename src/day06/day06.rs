@@ -39,11 +39,7 @@ pub fn part2(input: &str) -> usize {
     for group in groups {
         let mut group_set = group.iter().next().unwrap().clone();
         for person in group.iter().skip(1) {
-            // allocating a new group_set every iteration seems unneccessary, the alternative was using
-            // group_set.difference and removing each element separately, however group_set.difference
-            // immutably borrows group_set, disallowing us to remove elements. Seems like there is no way
-            // around allocating a new set here no matter what, and this is the simplest way to go about it.
-            group_set = group_set.intersection(&person).copied().collect();
+            group_set.retain(|c| person.contains(c));
         }
         res += group_set.len();
     }
