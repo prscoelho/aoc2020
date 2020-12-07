@@ -8,7 +8,7 @@ fn read_bags(input: &str) -> BagRules {
         let tokens = line.split(" bags contain ").collect::<Vec<_>>();
         let bag = tokens[0];
         let mut contains = Vec::new();
-        for element in tokens[1].strip_suffix(".").unwrap().split(", ") {
+        for element in tokens[1].split(", ") {
             let mut words = element.splitn(2, " ");
             let num = match words.next() {
                 Some("no") => break,
