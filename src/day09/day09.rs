@@ -44,17 +44,19 @@ pub fn part2(input: &str) -> u64 {
     let target = part1(input);
 
     let sums = list_of_sums(&data);
-    for (idx_a, a) in sums.iter().enumerate() {
-        for (idx_b, b) in sums.iter().enumerate().skip(idx_a + 1) {
-            if b - a == target {
-                let min = data[idx_a..idx_b].iter().min().unwrap();
-                let max = data[idx_a..idx_b].iter().max().unwrap();
-
-                return min + max;
-            }
+    let mut left = 0;
+    let mut right = 1;
+    while sums[right] - sums[left] != target {
+        if sums[right] - sums[left] < target {
+            right += 1;
+        } else {
+            left += 1
         }
     }
-    unreachable!()
+    let min = data[left..right].iter().min().unwrap();
+    let max = data[left..right].iter().max().unwrap();
+
+    return min + max;
 }
 
 #[cfg(test)]
