@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::ops::{Add, AddAssign, Mul, MulAssign};
 
 #[derive(Clone, Copy)]
 pub enum Direction {
@@ -54,6 +55,7 @@ pub fn rotate(from: Direction, rotation: Rotation) -> Direction {
 // If it's out of bounds, it's simply not in the grid.
 // Furthermore, there might be scenarios where the grid actually
 // contains negative values, with the origin in the middle of the grid
+#[derive(Clone)]
 pub struct Grid {
     pub data: BTreeMap<Vector2, char>,
     pub cols: i64,
@@ -88,8 +90,6 @@ impl Vector2 {
     }
 }
 
-use std::ops::{Add, AddAssign};
-
 impl Add for Vector2 {
     type Output = Self;
 
@@ -107,5 +107,68 @@ impl AddAssign for Vector2 {
             x: self.x + other.x,
             y: self.y + other.y,
         };
+    }
+}
+
+impl Mul<i64> for Vector2 {
+    type Output = Self;
+
+    fn mul(self, scalar: i64) -> Self {
+        Self {
+            x: self.x * scalar,
+            y: self.y * scalar,
+        }
+    }
+}
+
+impl MulAssign<i64> for Vector2 {
+    fn mul_assign(&mut self, scalar: i64) {
+        *self = Self {
+            x: self.x * scalar,
+            y: self.y * scalar,
+        }
+    }
+}
+#[derive(Debug)]
+pub struct CharSet(u32);
+
+impl CharSet {
+    pub fn new() -> Self {
+        CharSet(0)
+    }
+
+    pub fn insert(&mut self, c: char) -> bool {
+        let idx = CharSet::decode(c);
+        let present = (self.0 & idx) != 0;
+        self.0 |= idx;
+        !present
+    }
+
+    pub fn contains(&self, c: char) -> bool {
+        let idx = CharSet::decode(c);
+        (self.0 & idx) != 0
+    }
+
+    fn decode(c: char) -> u32 {
+        match c {
+            'a'..='z' => 1 << (c as u8 - 'a' as u8),
+            'A'..='Z' => 1 << (c as u8 - 'A' as u8),
+            _ => {
+                panic!();
+            }
+        }
+    }
+}
+#[cfg(test)]
+mod charset_test {
+    use super::CharSet;
+    #[test]
+    fn insert_contains() {
+        let mut set = CharSet::new();
+        assert_eq!(set.contains('a'), false);
+
+        assert_eq!(set.insert('A'), true);
+        assert_eq!(set.contains('a'), true);
+        assert_eq!(set.insert('A'), false);
     }
 }
