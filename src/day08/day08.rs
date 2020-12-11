@@ -1,22 +1,28 @@
 use std::collections::HashSet;
 #[derive(Clone, Copy)]
-enum Instruction {
-    ACC(i64),
-    JUMP(i64),
-    NOP(i64),
+struct Instruction {
+    value: i64,
+    kind: InstructionKind,
+}
+#[derive(Clone, Copy)]
+enum InstructionKind {
+    ACC,
+    JUMP,
+    NOP,
 }
 
 fn parse_instruction(line: &str) -> Instruction {
     let mut tokens = line.split(" ");
     let instr = tokens.next().unwrap();
-    let val = tokens.next().unwrap().parse::<i64>().unwrap();
+    let value = tokens.next().unwrap().parse::<i64>().unwrap();
 
-    match instr {
-        "jmp" => Instruction::JUMP(val),
-        "nop" => Instruction::NOP(val),
-        "acc" => Instruction::ACC(val),
+    let kind = match instr {
+        "jmp" => InstructionKind::JUMP,
+        "nop" => InstructionKind::NOP,
+        "acc" => InstructionKind::ACC,
         _ => panic!("Unexpected instruction"),
-    }
+    };
+    Instruction { value, kind }
 }
 
 fn read_memory(input: &str) -> Vec<Instruction> {
@@ -37,15 +43,17 @@ fn run(memory: Vec<Instruction>) -> (i64, bool) {
         if !seen.insert(instruction_pointer) {
             return (acc, false);
         }
-        match memory[instruction_pointer as usize] {
-            Instruction::ACC(val) => {
-                acc += val;
+        let idx = instruction_pointer as usize;
+        let Instruction { value, kind } = memory[idx];
+        match kind {
+            InstructionKind::ACC => {
+                acc += value;
             }
-            Instruction::JUMP(val) => {
-                instruction_pointer += val;
+            InstructionKind::JUMP => {
+                instruction_pointer += value;
                 continue;
             }
-            Instruction::NOP(_) => {}
+            InstructionKind::NOP => {}
         }
         instruction_pointer += 1;
     }
@@ -61,15 +69,15 @@ pub fn part2(input: &str) -> i64 {
     let memory = read_memory(input);
 
     for (idx, instr) in memory.iter().enumerate() {
-        let new_instruction = match instr {
-            Instruction::JUMP(val) => Instruction::NOP(*val),
-            Instruction::NOP(val) => Instruction::JUMP(*val),
-            Instruction::ACC(_) => {
+        let new_kind = match instr.kind {
+            InstructionKind::JUMP => InstructionKind::NOP,
+            InstructionKind::NOP => InstructionKind::JUMP,
+            InstructionKind::ACC => {
                 continue;
             }
         };
         let mut new_memory = memory.clone();
-        new_memory[idx] = new_instruction;
+        new_memory[idx].kind = new_kind;
 
         let (acc, completed) = run(new_memory);
         if completed {
