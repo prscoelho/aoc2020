@@ -56,13 +56,13 @@ pub fn rotate(from: Direction, rotation: Rotation) -> Direction {
 // Furthermore, there might be scenarios where the grid actually
 // contains negative values, with the origin in the middle of the grid
 #[derive(Clone)]
-pub struct Grid {
+pub struct GridMap {
     pub data: BTreeMap<Vector2, char>,
     pub cols: i64,
     pub rows: i64,
 }
 
-pub fn parse_grid(input: &str) -> Grid {
+pub fn parse_gridmap(input: &str) -> GridMap {
     let mut data = BTreeMap::new();
 
     let mut rows = 0;
@@ -75,7 +75,50 @@ pub fn parse_grid(input: &str) -> Grid {
         }
         rows += 1;
     }
+    GridMap { data, rows, cols }
+}
+
+pub fn parse_grid(input: &str) -> Grid {
+    let mut data = Vec::new();
+
+    let mut rows = 0;
+    let mut cols = 0;
+    for line in input.lines() {
+        cols = 0;
+        for c in line.chars() {
+            data.push(c);
+            cols += 1;
+        }
+        rows += 1;
+    }
     Grid { data, rows, cols }
+}
+
+#[derive(Clone)]
+pub struct Grid {
+    pub data: Vec<char>,
+    pub cols: i64,
+    pub rows: i64,
+}
+
+impl Grid {
+    #[inline(always)]
+    pub fn get(&self, pos: &Vector2) -> char {
+        self.data[self.index(pos)]
+    }
+    #[inline(always)]
+    pub fn replace(&mut self, pos: &Vector2, c: char) {
+        let idx = self.index(pos);
+        self.data[idx] = c;
+    }
+    #[inline(always)]
+    pub fn in_bounds(&self, pos: &Vector2) -> bool {
+        pos.x >= 0 && pos.x < self.cols && pos.y >= 0 && pos.y < self.rows
+    }
+    #[inline(always)]
+    fn index(&self, pos: &Vector2) -> usize {
+        (self.cols * pos.y + pos.x) as usize
+    }
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -85,7 +128,7 @@ pub struct Vector2 {
 }
 
 impl Vector2 {
-    pub fn new(x: i64, y: i64) -> Self {
+    pub const fn new(x: i64, y: i64) -> Self {
         Self { x, y }
     }
 }

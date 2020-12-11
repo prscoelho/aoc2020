@@ -1,7 +1,7 @@
 use aoc2020::Vector2;
-use aoc2020::{parse_grid, Grid};
+use aoc2020::{parse_gridmap, GridMap};
 
-fn trees_in_slope(grid: &Grid, slope: Vector2) -> u64 {
+fn trees_in_slope(grid: &GridMap, slope: Vector2) -> u64 {
     let mut pos = Vector2::new(0, 0);
 
     let mut tree_count = 0;
@@ -20,12 +20,12 @@ fn trees_in_slope(grid: &Grid, slope: Vector2) -> u64 {
 }
 
 pub fn part1(input: &str) -> u64 {
-    let grid = parse_grid(input);
+    let grid = parse_gridmap(input);
     trees_in_slope(&grid, Vector2::new(3, 1))
 }
 
 pub fn part2(input: &str) -> u64 {
-    let grid = parse_grid(input);
+    let grid = parse_gridmap(input);
     let slopes = [
         Vector2::new(1, 1),
         Vector2::new(3, 1),

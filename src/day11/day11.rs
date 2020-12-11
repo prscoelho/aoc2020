@@ -1,98 +1,107 @@
 use aoc2020::{parse_grid, Grid, Vector2};
 
-fn count_neighbours(grid: &Grid, i: i64, j: i64) -> usize {
+fn count_neighbours(grid: &Grid, pos: Vector2) -> usize {
     let mut count = 0;
-    for p in i - 1..=i + 1 {
-        for q in j - 1..=j + 1 {
-            if p == i && q == j {
-                continue;
-            }
-            if let Some(&c) = grid.data.get(&Vector2::new(p, q)) {
-                if c == '#' {
-                    count += 1
-                }
-            }
+    for &adj in NEIGHBOURS.iter() {
+        let neighbour = pos + adj;
+        if grid.in_bounds(&neighbour) && grid.get(&neighbour) == '#' {
+            count += 1;
         }
     }
     count
 }
 
-fn count_eyesight_neighbours(grid: &Grid, i: i64, j: i64) -> usize {
+const NEIGHBOURS: [Vector2; 8] = [
+    Vector2::new(-1, -1),
+    Vector2::new(-1, 0),
+    Vector2::new(-1, 1),
+    Vector2::new(0, -1),
+    Vector2::new(0, 1),
+    Vector2::new(1, -1),
+    Vector2::new(1, 0),
+    Vector2::new(1, 1),
+];
+
+fn count_eyesight_neighbours(grid: &Grid, pos: Vector2) -> usize {
     let mut count = 0;
-    for p in -1..=1 {
-        for q in -1..=1 {
-            if p == 0 && q == 0 {
-                continue;
+    for adj in NEIGHBOURS.iter() {
+        let mut current = pos + *adj;
+        while grid.in_bounds(&current) {
+            let tile = grid.get(&current);
+            if tile == '#' {
+                count += 1;
+                break;
             }
-            let mut current = Vector2::new(i, j);
-            let adj = Vector2::new(p, q);
-            current += adj;
-            while let Some(&c) = grid.data.get(&current) {
-                if c == '#' {
-                    count += 1;
-                    break;
-                }
-                if c == 'L' {
-                    break;
-                }
-                current += adj;
+            if tile == 'L' {
+                break;
             }
+            current += *adj;
         }
     }
     count
 }
 
-fn next(grid: &Grid) -> (Grid, bool) {
-    let mut result = grid.clone();
+fn next(grid: &Grid, result: &mut Grid) -> bool {
     let mut changed = false;
 
-    for (pos, &tile) in grid.data.iter() {
-        if tile == '.' {
-            continue;
-        }
-        let n = count_neighbours(grid, pos.x, pos.y);
-        match (tile, n) {
-            ('L', 0) => {
-                result.data.insert(*pos, '#');
-                changed = true;
+    for y in 0..grid.rows {
+        for x in 0..grid.cols {
+            let pos = Vector2::new(x, y);
+            let tile = grid.get(&pos);
+            if tile == '.' {
+                continue;
             }
-            ('#', 4..=9) => {
-                result.data.insert(*pos, 'L');
-                changed = true;
+            let n = count_neighbours(grid, pos);
+            match (tile, n) {
+                ('L', 0) => {
+                    result.replace(&pos, '#');
+                    changed = true;
+                }
+                ('#', 4..=9) => {
+                    result.replace(&pos, 'L');
+                    changed = true;
+                }
+                _ => {
+                    result.replace(&pos, tile);
+                }
             }
-            _ => {}
         }
     }
-    (result, changed)
+    changed
 }
 
-fn next_part2(grid: &Grid) -> (Grid, bool) {
-    let mut result = grid.clone();
+fn next_part2(grid: &Grid, result: &mut Grid) -> bool {
     let mut changed = false;
 
-    for (pos, &tile) in grid.data.iter() {
-        if tile == '.' {
-            continue;
-        }
-        let n = count_eyesight_neighbours(grid, pos.x, pos.y);
-        match (tile, n) {
-            ('L', 0) => {
-                result.data.insert(*pos, '#');
-                changed = true;
+    for y in 0..grid.rows {
+        for x in 0..grid.cols {
+            let pos = Vector2::new(x, y);
+            let tile = grid.get(&pos);
+            if tile == '.' {
+                continue;
             }
-            ('#', 5..=9) => {
-                result.data.insert(*pos, 'L');
-                changed = true;
+            let n = count_eyesight_neighbours(grid, pos);
+            match (tile, n) {
+                ('L', 0) => {
+                    result.replace(&pos, '#');
+                    changed = true;
+                }
+                ('#', 5..=9) => {
+                    result.replace(&pos, 'L');
+                    changed = true;
+                }
+                _ => {
+                    result.replace(&pos, tile);
+                }
             }
-            _ => {}
         }
     }
-    (result, changed)
+    changed
 }
 
 fn count_occupied(grid: &Grid) -> usize {
     let mut occupied = 0;
-    for &tile in grid.data.values() {
+    for &tile in grid.data.iter() {
         if tile == '#' {
             occupied += 1;
         }
@@ -102,10 +111,11 @@ fn count_occupied(grid: &Grid) -> usize {
 
 pub fn part1(input: &str) -> usize {
     let mut grid = parse_grid(input);
+    let mut next_grid = grid.clone();
 
     loop {
-        let (next_grid, changed) = next(&grid);
-        grid = next_grid;
+        let changed = next(&grid, &mut next_grid);
+        std::mem::swap(&mut grid, &mut next_grid);
         if !changed {
             break;
         }
@@ -115,10 +125,11 @@ pub fn part1(input: &str) -> usize {
 
 pub fn part2(input: &str) -> usize {
     let mut grid = parse_grid(input);
+    let mut next_grid = grid.clone();
 
     loop {
-        let (next_grid, changed) = next_part2(&grid);
-        grid = next_grid;
+        let changed = next_part2(&grid, &mut next_grid);
+        std::mem::swap(&mut grid, &mut next_grid);
         if !changed {
             break;
         }
