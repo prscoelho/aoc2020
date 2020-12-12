@@ -16,12 +16,12 @@ fn manhattan(pos: Vector2) -> i64 {
 
 // integer cos and sin for angles that yield -1, 0 or 1
 fn cos(angle: i64) -> i64 {
-    let rad = (angle / 90) as f64 * std::f64::consts::FRAC_PI_2;
+    let rad = (angle as f32).to_radians();
     rad.cos().round() as i64
 }
 
 fn sin(angle: i64) -> i64 {
-    let rad = (angle / 90) as f64 * std::f64::consts::FRAC_PI_2;
+    let rad = (angle as f32).to_radians();
     rad.sin().round() as i64
 }
 
@@ -102,6 +102,7 @@ pub fn part2(input: &str) -> i64 {
     manhattan(position)
 }
 
+#[cfg(test)]
 mod test {
     #[test]
     fn part1() {
