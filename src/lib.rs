@@ -116,7 +116,7 @@ impl Grid {
         pos.x >= 0 && pos.x < self.cols && pos.y >= 0 && pos.y < self.rows
     }
     #[inline(always)]
-    fn index(&self, pos: &Vector2) -> usize {
+    pub fn index(&self, pos: &Vector2) -> usize {
         (self.cols * pos.y + pos.x) as usize
     }
 }

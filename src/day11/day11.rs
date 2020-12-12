@@ -1,14 +1,59 @@
+use std::ops::RangeInclusive;
+
 use aoc2020::{parse_grid, Grid, Vector2};
 
-fn count_neighbours(grid: &Grid, pos: Vector2) -> usize {
-    let mut count = 0;
-    for &adj in NEIGHBOURS.iter() {
-        let neighbour = pos + adj;
-        if grid.in_bounds(&neighbour) && grid.get(&neighbour) == '#' {
-            count += 1;
+// instead of iterating over every element in the grid, we search once for all seat indexes
+fn create_seats(grid: &Grid) -> Vec<usize> {
+    let mut seats = Vec::new();
+    for (idx, &tile) in grid.data.iter().enumerate() {
+        if tile == 'L' {
+            seats.push(idx);
         }
     }
-    count
+    seats
+}
+
+// instead of looking around each seat and wasting time on non seat neighbours,
+// search once for which neighbours are seats and only iterate over those, this
+// is specially better for part 2 where we might be wasting a lot of iterations
+// searching for the same neighbours every step.
+fn create_adjacent_neighbours(grid: &Grid, seats: &[usize]) -> Vec<Vec<usize>> {
+    let mut result = Vec::new();
+    for &seat in seats {
+        let mut seat_neighbours = Vec::new();
+        let pos = Vector2::new(seat as i64 % grid.cols, seat as i64 / grid.cols);
+
+        for &adj in NEIGHBOURS.iter() {
+            let neighbour = pos + adj;
+            if grid.in_bounds(&neighbour) && grid.get(&neighbour) == 'L' {
+                seat_neighbours.push(grid.index(&neighbour));
+            }
+        }
+        result.push(seat_neighbours);
+    }
+    result
+}
+
+fn create_eyesight_neighbours(grid: &Grid, seats: &[usize]) -> Vec<Vec<usize>> {
+    let mut result = Vec::new();
+    for &seat in seats {
+        let mut seat_neighbours = Vec::new();
+        let pos = Vector2::new(seat as i64 % grid.cols, seat as i64 / grid.cols);
+
+        for adj in NEIGHBOURS.iter() {
+            let mut current = pos + *adj;
+            while grid.in_bounds(&current) {
+                let tile = grid.get(&current);
+                if tile == 'L' {
+                    seat_neighbours.push(grid.index(&current));
+                    break;
+                }
+                current += *adj;
+            }
+        }
+        result.push(seat_neighbours);
+    }
+    result
 }
 
 const NEIGHBOURS: [Vector2; 8] = [
@@ -22,77 +67,37 @@ const NEIGHBOURS: [Vector2; 8] = [
     Vector2::new(1, 1),
 ];
 
-fn count_eyesight_neighbours(grid: &Grid, pos: Vector2) -> usize {
-    let mut count = 0;
-    for adj in NEIGHBOURS.iter() {
-        let mut current = pos + *adj;
-        while grid.in_bounds(&current) {
-            let tile = grid.get(&current);
-            if tile == '#' {
-                count += 1;
-                break;
-            }
-            if tile == 'L' {
-                break;
-            }
-            current += *adj;
-        }
-    }
-    count
+fn count_neighbours(grid: &Grid, neighbours: &[usize]) -> usize {
+    neighbours
+        .iter()
+        .map(|&idx| grid.data[idx])
+        .filter(|&c| c == '#')
+        .count()
 }
 
-fn next(grid: &Grid, result: &mut Grid) -> bool {
+fn next(
+    grid: &Grid,
+    seats: &[usize],
+    adjacencies: &Vec<Vec<usize>>,
+    empty_range: RangeInclusive<usize>,
+    result: &mut Grid,
+) -> bool {
     let mut changed = false;
 
-    for y in 0..grid.rows {
-        for x in 0..grid.cols {
-            let pos = Vector2::new(x, y);
-            let tile = grid.get(&pos);
-            if tile == '.' {
-                continue;
+    for (idx, &seat) in seats.iter().enumerate() {
+        let n = count_neighbours(grid, &adjacencies[idx]);
+        let tile = grid.data[seat];
+        match (tile, n) {
+            ('L', 0) => {
+                result.data[seat] = '#';
+                changed = true;
             }
-            let n = count_neighbours(grid, pos);
-            match (tile, n) {
-                ('L', 0) => {
-                    result.replace(&pos, '#');
-                    changed = true;
-                }
-                ('#', 4..=9) => {
-                    result.replace(&pos, 'L');
-                    changed = true;
-                }
-                _ => {
-                    result.replace(&pos, tile);
-                }
+            ('#', n) if empty_range.contains(&n) => {
+                result.data[seat] = 'L';
+                changed = true;
             }
-        }
-    }
-    changed
-}
-
-fn next_part2(grid: &Grid, result: &mut Grid) -> bool {
-    let mut changed = false;
-
-    for y in 0..grid.rows {
-        for x in 0..grid.cols {
-            let pos = Vector2::new(x, y);
-            let tile = grid.get(&pos);
-            if tile == '.' {
-                continue;
-            }
-            let n = count_eyesight_neighbours(grid, pos);
-            match (tile, n) {
-                ('L', 0) => {
-                    result.replace(&pos, '#');
-                    changed = true;
-                }
-                ('#', 5..=9) => {
-                    result.replace(&pos, 'L');
-                    changed = true;
-                }
-                _ => {
-                    result.replace(&pos, tile);
-                }
+            _ => {
+                result.data[seat] = tile;
             }
         }
     }
@@ -113,8 +118,10 @@ pub fn part1(input: &str) -> usize {
     let mut grid = parse_grid(input);
     let mut next_grid = grid.clone();
 
+    let seats = create_seats(&grid);
+    let adj = create_adjacent_neighbours(&grid, &seats);
     loop {
-        let changed = next(&grid, &mut next_grid);
+        let changed = next(&grid, &seats, &adj, 4..=9, &mut next_grid);
         std::mem::swap(&mut grid, &mut next_grid);
         if !changed {
             break;
@@ -126,9 +133,11 @@ pub fn part1(input: &str) -> usize {
 pub fn part2(input: &str) -> usize {
     let mut grid = parse_grid(input);
     let mut next_grid = grid.clone();
+    let seats = create_seats(&grid);
+    let adj = create_eyesight_neighbours(&grid, &seats);
 
     loop {
-        let changed = next_part2(&grid, &mut next_grid);
+        let changed = next(&grid, &seats, &adj, 5..=9, &mut next_grid);
         std::mem::swap(&mut grid, &mut next_grid);
         if !changed {
             break;
