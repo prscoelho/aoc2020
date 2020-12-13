@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::ops::{Add, AddAssign, Mul, MulAssign};
+use std::str::FromStr;
 
 #[derive(Clone, Copy)]
 pub enum Direction {
@@ -214,4 +215,16 @@ mod charset_test {
         assert_eq!(set.contains('a'), true);
         assert_eq!(set.insert('A'), false);
     }
+}
+
+pub fn parse_ints<T>(input: &str) -> Vec<T>
+where
+    T: FromStr,
+    T::Err: std::fmt::Debug,
+{
+    let mut result = Vec::new();
+    for line in input.lines() {
+        result.push(line.parse().expect("Failed to parse number"));
+    }
+    result
 }
