@@ -31,8 +31,8 @@ fn read_input(input: &str) -> Vec<Instruction> {
     let mut instructions = Vec::new();
     for line in input.lines() {
         if line.starts_with("mask") {
-            let (to_and, to_or) = read_mask(&line[7..]);
-            instructions.push(Instruction::Mask(to_and, to_or));
+            let (xs, values) = read_mask(&line[7..]);
+            instructions.push(Instruction::Mask(xs, values));
         } else {
             let mut tokens_it = line.split(" = ");
             let left = tokens_it.next().unwrap();
@@ -55,9 +55,9 @@ pub fn part1(input: &str) -> u64 {
     let mut memory = HashMap::new();
     for instruction in instructions {
         match instruction {
-            Instruction::Mask(and, or) => {
-                xs = and;
-                values = or;
+            Instruction::Mask(x, v) => {
+                xs = x;
+                values = v;
             }
             Instruction::Update(location, value) => {
                 let e = memory.entry(location).or_default();
@@ -100,9 +100,9 @@ pub fn part2(input: &str) -> u64 {
     let mut memory = HashMap::new();
     for instruction in instructions {
         match instruction {
-            Instruction::Mask(and, or) => {
-                xs = and;
-                values = or;
+            Instruction::Mask(x, v) => {
+                xs = x;
+                values = v;
             }
             Instruction::Update(location, value) => {
                 let unfloating = location | values;
