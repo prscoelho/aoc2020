@@ -1,5 +1,5 @@
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 
 fn read_input(input: &str) -> Vec<u32> {
     let mut nums = Vec::new();
