@@ -122,7 +122,7 @@ impl Grid {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Vector2 {
     pub y: i64, // sort by y before x
     pub x: i64,
@@ -131,6 +131,15 @@ pub struct Vector2 {
 impl Vector2 {
     pub const fn new(x: i64, y: i64) -> Self {
         Self { x, y }
+    }
+
+    pub fn neighbours(&self) -> [Vector2; 4] {
+        [
+            Vector2::new(self.x - 1, self.y),
+            Vector2::new(self.x + 1, self.y),
+            Vector2::new(self.x, self.y - 1),
+            Vector2::new(self.x, self.y + 1),
+        ]
     }
 }
 
