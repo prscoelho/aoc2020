@@ -1,41 +1,30 @@
-use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
 fn read_input(input: &str) -> Vec<u32> {
     let mut nums = Vec::new();
-    for num in input.split(",") {
+    for num in input.trim().split(",") {
         nums.push(num.parse().unwrap());
     }
     nums
 }
 
-fn memory_game(nums: Vec<u32>, nth: u32) -> u32 {
+fn memory_game(mut nums: Vec<u32>, nth: u32) -> u32 {
     let mut seen: HashMap<u32, u32> = HashMap::new();
 
+    let turn = nums.len() as u32 + 1;
+    // we dont want the last number in the seen map yet as we add last turn after it
+    let mut last = nums.pop().unwrap();
     // starting numbers
     for (idx, &num) in nums.iter().enumerate() {
-        let e = seen.entry(num).or_default();
-        *e = idx as u32 + 1; // turns start at 1
+        seen.insert(num, idx as u32 + 1); // turns start at 1
     }
 
-    let mut last = *nums.last().unwrap();
-    let turn = nums.len() as u32 + 1;
     for turn in turn..=nth {
-        // because last index is always turn -1,
-        // we can avoid storing two values inside hashmap
-        let value = match seen.entry(last) {
-            Entry::Occupied(mut o) => {
-                let e_mut = o.get_mut();
-                let value = turn - 1 - *e_mut;
-                *e_mut = turn - 1;
-                value
-            }
-            Entry::Vacant(v) => {
-                v.insert(turn - 1);
-                0
-            }
+        let seen_at_option = seen.insert(last, turn - 1);
+        last = match seen_at_option {
+            Some(val) => turn - 1 - val,
+            None => 0,
         };
-        last = value;
     }
     last
 }
@@ -58,7 +47,7 @@ mod test {
         assert_eq!(super::part1(input), 852);
     }
 
-    // part 2 is too heavy to run in non release mode
+    // part 2 is too heavy to run in debug mode
     // skip automatic testing, to test this function
     // run `cargo test -- --ignored`
     #[test]
