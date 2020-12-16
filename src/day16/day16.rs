@@ -121,12 +121,11 @@ pub fn part2(input: &str) -> u64 {
     while map.len() > 0 {
         let definite: Vec<_> = map.drain_filter(|_, v| v.len() == 1).collect();
         for (k, v) in definite {
-            name_index.insert(k, v.into_iter().next().unwrap());
-        }
-        for (_, indexes) in map.iter_mut() {
-            for finished in name_index.values() {
-                if indexes.contains(finished) {
-                    indexes.remove(finished);
+            let finished = v.into_iter().next().unwrap();
+            name_index.insert(k, finished);
+            for (_, indexes) in map.iter_mut() {
+                if indexes.contains(&finished) {
+                    indexes.remove(&finished);
                 }
             }
         }
