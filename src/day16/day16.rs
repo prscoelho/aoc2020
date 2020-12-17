@@ -12,7 +12,7 @@ struct Rule {
 
 fn parse_ticket(line: &str) -> Vec<u64> {
     let mut ticket = Vec::new();
-    for num in line.trim().split(",") {
+    for num in line.split(",") {
         ticket.push(num.parse().unwrap());
     }
     ticket
@@ -50,7 +50,7 @@ fn parse_rules(input: &str) -> Vec<Rule> {
 }
 
 fn parse_input(input: &str) -> (Vec<Rule>, Vec<u64>, Vec<Vec<u64>>) {
-    let groups: Vec<_> = input.split("\n\n").collect();
+    let groups: Vec<_> = input.trim().split("\n\n").collect();
     let rules = parse_rules(groups[0]);
     let my_ticket = parse_ticket(groups[1].split("\n").skip(1).next().unwrap());
 
