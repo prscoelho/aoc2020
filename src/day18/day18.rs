@@ -7,10 +7,10 @@ enum Token {
     Num(i64),
 }
 
-fn find_closing_parenthesis(tokens: &[Token], at: usize) -> usize {
+fn find_closing_parenthesis(tokens: &[Token]) -> usize {
     let mut count = 0;
 
-    for (idx, token) in tokens[at..].iter().enumerate() {
+    for (idx, token) in tokens.iter().enumerate() {
         match token {
             Token::OpenParenthesis => {
                 count += 1;
@@ -18,7 +18,7 @@ fn find_closing_parenthesis(tokens: &[Token], at: usize) -> usize {
             Token::CloseParenthesis => {
                 count -= 1;
                 if count == 0 {
-                    return at + idx;
+                    return idx;
                 }
             }
             _ => {}
@@ -95,7 +95,7 @@ fn consume(tokens: &[Token]) -> (i64, usize) {
         Token::OpenParenthesis => {
             // evaluate the inside of a parenthesis expression
             // and return (value, tokens_read)
-            let close_index = find_closing_parenthesis(tokens, 0);
+            let close_index = find_closing_parenthesis(tokens);
             let val = evaluate(&tokens[1..close_index]);
             (val, close_index + 1)
         }
@@ -143,7 +143,7 @@ fn consume_priority(tokens: &[Token]) -> (i64, usize) {
             unreachable!()
         }
         Token::OpenParenthesis => {
-            let close_index = find_closing_parenthesis(tokens, 0);
+            let close_index = find_closing_parenthesis(tokens);
             let val = evaluate_priority(&tokens[1..close_index]);
             (val, close_index + 1)
         }
