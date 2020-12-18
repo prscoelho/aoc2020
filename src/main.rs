@@ -17,6 +17,7 @@ mod day14;
 mod day15;
 mod day16;
 mod day17;
+mod day18;
 
 use std::fs::File;
 use std::io::prelude::*;
@@ -31,8 +32,8 @@ fn main() -> std::io::Result<()> {
     let mut file = File::open(&args[1])?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
-    println!("Part 1: {}", day17::part1(&contents));
-    println!("Part 2: {}", day17::part2(&contents));
+    println!("Part 1: {}", day18::part1(&contents));
+    println!("Part 2: {}", day18::part2(&contents));
 
     Ok(())
 }
