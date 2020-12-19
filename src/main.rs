@@ -1,4 +1,5 @@
 #![feature(hash_drain_filter)]
+#![feature(drain_filter)]
 #![allow(dead_code)]
 mod day01;
 mod day02;
