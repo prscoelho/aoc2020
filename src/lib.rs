@@ -95,7 +95,7 @@ pub fn parse_grid(input: &str) -> Grid {
     Grid { data, rows, cols }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Grid {
     pub data: Vec<char>,
     pub cols: i64,

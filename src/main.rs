@@ -1,5 +1,6 @@
 #![feature(hash_drain_filter)]
 #![feature(drain_filter)]
+#![feature(str_split_once)]
 #![allow(dead_code)]
 mod day01;
 mod day02;
@@ -20,6 +21,8 @@ mod day16;
 mod day17;
 mod day18;
 mod day19;
+mod day20;
+mod day21;
 
 use std::fs::File;
 use std::io::prelude::*;
@@ -34,8 +37,8 @@ fn main() -> std::io::Result<()> {
     let mut file = File::open(&args[1])?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
-    println!("Part 1: {}", day19::part1(&contents));
-    println!("Part 2: {}", day19::part2(&contents));
+    println!("Part 1: {}", day20::part1(&contents));
+    println!("Part 2: {}", day20::part2(&contents));
 
     Ok(())
 }
