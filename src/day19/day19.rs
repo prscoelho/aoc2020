@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 #[derive(Debug, Clone)]
 enum Rule {
@@ -47,161 +47,64 @@ fn parse_rules(rules_str: &str) -> HashMap<usize, Vec<Rule>> {
     rules
 }
 
-fn can_create(rules: &HashMap<usize, Vec<Rule>>, literal: char) -> Vec<usize> {
-    let mut result = Vec::new();
-    for (rule_index, rule_vec) in rules.iter() {
-        for rule in rule_vec {
-            if let Rule::Literal(c) = rule {
-                if *c == literal {
-                    result.push(*rule_index);
+fn matches(rules: &HashMap<usize, Vec<Rule>>, phrase: &[char], mut with: VecDeque<usize>) -> bool {
+    match (phrase.len(), with.len()) {
+        (0, 0) => return true,  // matches is true only if phrase and with is empty
+        (_, 0) => return false, // it can't match if phrase is empty and with is not, likewise for the reverse
+        (0, _) => return false,
+        _ => {}
+    }
+
+    let rule_to_expand = with.pop_front().unwrap();
+    let possibilities = &rules[&rule_to_expand];
+    for rule in possibilities {
+        let result = match rule {
+            Rule::Literal(c) => {
+                if c == &phrase[0] {
+                    // character matched with next rule literal, call matches with one less character and rest of with.
+                    let next_with = with.clone();
+                    matches(&rules, &phrase[1..], next_with)
+                } else {
+                    // character didn't match with the expanded rule
+                    false
                 }
             }
-        }
-    }
-    result
-}
-
-// an implementation of the CYK algorithm as described by
-// https://en.wikipedia.org/wiki/CYK_algorithm
-fn matches(rules: &HashMap<usize, Vec<Rule>>, input: &str) -> bool {
-    // In case there are gaps in key rules. this is a bit hacky, but it's faster
-    // to allocate more space than to use a hashset. but it is a trade off to
-    // watch out for. A bad input could be:
-    //   0: 50000
-    //   50000: "a"
-    // which would make us allocate 50000 * text_length^2 bytes, even though we only
-    // have two elements. the puzzle input has no gaps, so it's not a real problem.
-    // But example2 input has some gaps and we can easily pass that test with this
-    // small modification.
-    let rule_size = rules.keys().max().unwrap();
-
-    let text: Vec<char> = input.chars().collect();
-    let n = text.len();
-    let mut set = vec![vec![vec![false; rule_size + 1]; n + 1]; n + 1];
-    for s in 0..n {
-        for rule_index in can_create(&rules, text[s]) {
-            set[1][s][rule_index] = true;
-        }
-    }
-
-    for l in 2..=n {
-        for s in 0..=n - l + 1 {
-            for p in 1..=l - 1 {
-                for (&a, vec_rule) in rules.iter() {
-                    for rule in vec_rule {
-                        if let Rule::Standard(v) = rule {
-                            let b = v[0];
-                            let c = v[1];
-
-                            if set[p][s][b] && set[l - p][s + p][c] {
-                                set[l][s][a] = true;
-                            }
-                        }
-                    }
+            Rule::Standard(expanded) => {
+                // we werent able to match with a character, expand the popped rule and try to match [expanded, rest]
+                let next_with: VecDeque<usize> =
+                    expanded.iter().chain(with.iter()).copied().collect();
+                if expanded.len() > phrase.len() {
+                    // if the total expanded rule size is bigger than phrase size, it can't possibly match.
+                    // there are no empty rules, each rule will match at least one character
+                    false
+                } else {
+                    matches(&rules, &phrase, next_with)
                 }
             }
+        };
+        if result {
+            return true;
         }
     }
-    set[n][0][0]
-}
-
-fn remove_unit_rules(rules: &mut HashMap<usize, Vec<Rule>>) {
-    loop {
-        let reference = rules.clone();
-        let mut keep_looping = false;
-        for (_, rule_vec) in rules.iter_mut() {
-            let removed = rule_vec
-                .drain_filter(|rule| {
-                    match rule {
-                        Rule::Literal(_) => {
-                            false // dont filter out literals
-                        }
-                        Rule::Standard(v) => {
-                            v.len() == 1 // only filter if len == 1
-                        }
-                    }
-                })
-                .collect::<Vec<_>>();
-            if removed.len() > 0 {
-                keep_looping = true;
-            }
-            for rule in removed {
-                if let Rule::Standard(v) = rule {
-                    let r = v[0];
-                    // we are replacing A -> B with A -> C D where C D is B -> C D
-                    // or, in english, we are replacing B with wherever B leads to.
-                    for rule in reference[&r].iter() {
-                        rule_vec.push(rule.clone());
-                    }
-                }
-            }
-        }
-        if !keep_looping {
-            break;
-        }
-    }
-}
-
-fn remove_triple_rules(rules: &mut HashMap<usize, Vec<Rule>>) {
-    loop {
-        // to account for gaps in keys, we'll add new keys starting at max_rule + 1.
-        // we could search for gaps if we really wanted to save space. there are no
-        // gaps in the puzzle input, only in the example2 input
-        let mut rules_size = *rules.keys().max().unwrap() + 1;
-        let mut to_add = HashMap::new();
-        for (_, rule_vec) in rules.iter_mut() {
-            let removed = rule_vec
-                .drain_filter(|rule| {
-                    match rule {
-                        Rule::Literal(_) => {
-                            false // dont filter out literals
-                        }
-                        Rule::Standard(v) => {
-                            v.len() == 3 // only filter if len == 3, we could make it more general but it's
-                                         // unneeded complexity, we have no rules with more than three elements
-                        }
-                    }
-                })
-                .collect::<Vec<_>>();
-            for rule in removed {
-                if let Rule::Standard(mut v) = rule {
-                    let first = v.remove(0);
-                    let new_index = rules_size;
-                    // to fix rules that are in the form of A -> B C D
-                    // we change A to A -> B E
-                    // and add a new rule E -> C D
-                    let modified_rule = Rule::Standard(vec![first, new_index]);
-                    rule_vec.push(modified_rule);
-
-                    let new_rule = vec![Rule::Standard(v)];
-                    // because we are currently iterating and mutating rules,
-                    // we can't add more elements to it. so, keep a list of new rules
-                    // to add and add them after we finish iterating.
-                    to_add.insert(new_index, new_rule);
-
-                    rules_size += 1;
-                }
-            }
-        }
-        if to_add.len() == 0 {
-            break;
-        }
-        for (rule_index, rule_vec) in to_add {
-            rules.insert(rule_index, rule_vec);
-        }
-    }
+    false
 }
 
 pub fn part1(input: &str) -> usize {
     let mut it = input.split("\n\n");
-    let mut rules = parse_rules(it.next().unwrap());
-    remove_triple_rules(&mut rules);
-    remove_unit_rules(&mut rules);
-    let strings: Vec<String> = it.next().unwrap().lines().map(|s| s.into()).collect();
+    let rules = parse_rules(it.next().unwrap());
+    let strings: Vec<Vec<char>> = it
+        .next()
+        .unwrap()
+        .lines()
+        .map(|s| s.chars().collect())
+        .collect();
+
+    let mut start = VecDeque::new();
+    start.push_back(0);
 
     strings
         .into_iter()
-        .map(|s| matches(&rules, &s))
+        .map(|s| matches(&rules, &s, start.clone()))
         .filter(|&b| b)
         .count()
 }
@@ -225,14 +128,20 @@ pub fn part2(input: &str) -> usize {
     let mut rules = parse_rules(it.next().unwrap());
 
     modify_part2(&mut rules);
-    remove_triple_rules(&mut rules);
-    remove_unit_rules(&mut rules);
 
-    let strings: Vec<String> = it.next().unwrap().lines().map(|s| s.into()).collect();
+    let strings: Vec<Vec<char>> = it
+        .next()
+        .unwrap()
+        .lines()
+        .map(|s| s.chars().collect())
+        .collect();
+
+    let mut start = VecDeque::new();
+    start.push_back(0);
 
     strings
         .into_iter()
-        .map(|s| matches(&rules, &s))
+        .map(|s| matches(&rules, &s, start.clone()))
         .filter(|&b| b)
         .count()
 }
