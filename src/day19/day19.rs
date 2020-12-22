@@ -148,18 +148,15 @@ pub fn part2(input: &str) -> usize {
 
 #[cfg(test)]
 mod test {
-    // running the puzzle input on debug mode doesnt seem feasible,
-    // but at least test the example inputs.
     #[test]
-    fn example1() {
-        let input = include_str!("example");
-        assert_eq!(super::part1(input), 2);
+    fn part1() {
+        let input = include_str!("input");
+        assert_eq!(super::part1(input), 220);
     }
 
     #[test]
-    fn example2() {
-        let input = include_str!("example2");
-        assert_eq!(super::part1(input), 3);
-        assert_eq!(super::part2(input), 12);
+    fn part2() {
+        let input = include_str!("input");
+        assert_eq!(super::part2(input), 439);
     }
 }
