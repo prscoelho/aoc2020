@@ -79,8 +79,7 @@ fn take(links: &[usize], from: usize, n: usize) -> Vec<usize> {
 }
 
 pub fn part2(input: &str) -> usize {
-    let nums = parse_input(input);
-    let mut nums: Vec<usize> = nums.into_iter().map(|u| u as usize).collect();
+    let mut nums = parse_input(input);
     let highest = *nums.iter().max().unwrap();
     for i in highest + 1..=1_000_000 {
         nums.push(i);
