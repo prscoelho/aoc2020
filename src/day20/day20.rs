@@ -86,8 +86,11 @@ impl Tile {
 
 fn connect_all(mut all_grids: HashMap<usize, Grid>) -> HashMap<usize, Tile> {
     let mut mappings = HashMap::new();
-    let key = *all_grids.keys().next().unwrap();
-    let first_grid = all_grids.get(&key).unwrap();
+
+    // place any tile in any starting orientation, all other tiles will rotate to match it
+    // so the first tile's starting orientation doesn't matter
+    // tiles that have already been placed can't be rotated or flipped
+    let (&key, first_grid) = all_grids.iter().next().unwrap();
     let first_tile = Tile::new(key, first_grid.clone());
     mappings.insert(key, first_tile);
 
@@ -97,7 +100,13 @@ fn connect_all(mut all_grids: HashMap<usize, Grid>) -> HashMap<usize, Tile> {
     while let Some(current_id) = unfinished.pop() {
         let current_tile = mappings.get(&current_id).unwrap().clone();
         let current_borders = borders(&current_tile.grid);
-        let mut connections_matched = 0;
+
+        // count how many connections the tile already has
+        let mut connections_matched = current_tile
+            .connections
+            .iter()
+            .filter(|o| o.is_some())
+            .count();
         'outer: for (&other_id, other_grid) in all_grids.iter_mut() {
             if other_id == current_id {
                 continue;
@@ -116,8 +125,10 @@ fn connect_all(mut all_grids: HashMap<usize, Grid>) -> HashMap<usize, Tile> {
                         for _ in 0..4 {
                             // rotated 0, 1, 2, 3 times.
                             let other_borders = borders(other_grid);
+                            // the reverse border which current_tile must match with
                             let other_side = (side + 2) % 4;
                             if current_borders[side] == other_borders[other_side] {
+                                // check if other_tile is already mapped, otherwise add it to mappings
                                 if let Some(other_tile) = mappings.get_mut(&other_id) {
                                     other_tile.connections[other_side] = Some(current_id);
                                 } else {
@@ -161,6 +172,7 @@ pub fn part1(input: &str) -> usize {
         .product()
 }
 
+// assemble all mapped tiles into a single big grid
 fn join_tiles(mappings: HashMap<usize, Tile>) -> Grid {
     let size = mappings.values().next().unwrap().grid.cols - 2;
     let side_amount = (mappings.len() as f32).sqrt() as i64;
@@ -194,11 +206,12 @@ fn join_tiles(mappings: HashMap<usize, Tile>) -> Grid {
                     final_grid.replace(&big_position, c);
                 }
             }
-            // move current to next right tile
+            // move current tile to next right tile
             if let Some(connection) = &current.connections[2] {
                 current = mappings[connection].clone();
             }
         }
+        // move leftmost tile down one row
         if let Some(connection) = &left.connections[3] {
             left = &mappings[connection];
         }
@@ -263,4 +276,19 @@ pub fn part2(input: &str) -> usize {
     let total_tiles = count_tiles(&final_grid);
     let monsters = find_monsters(final_grid);
     total_tiles - (monsters * 15)
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn part1() {
+        let input = include_str!("input");
+        assert_eq!(super::part1(input), 174206308298779);
+    }
+
+    #[test]
+    fn part2() {
+        let input = include_str!("input");
+        assert_eq!(super::part2(input), 2409);
+    }
 }
