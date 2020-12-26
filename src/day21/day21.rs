@@ -25,6 +25,9 @@ fn find_allergens<'a>(
     let mut allergen_to_ingredient: HashMap<&str, HashSet<&str>> = HashMap::new();
     for (ingredients, allergens_option) in lines.iter() {
         if let Some(allergens) = allergens_option {
+            // allergen listed can match any of the ingredients on the list
+            // we can narrow options down by removing elements that don't get repeated
+            // every time the allergen is listed
             for allergen in allergens.iter() {
                 if let Some(possibilities) = allergen_to_ingredient.get_mut(allergen) {
                     possibilities.retain(|element| ingredients.contains(element));
@@ -62,24 +65,20 @@ pub fn part2(input: &str) -> String {
     let mut allergen_to_ingredient = find_allergens(&lines);
 
     let mut canonical_list: BTreeMap<&str, &str> = BTreeMap::new();
-    loop {
-        let mut changed = false;
-
+    while !allergen_to_ingredient.is_empty() {
         for (&allergen, ingredients) in allergen_to_ingredient.clone().iter() {
+            // if this allergen can only match one ingredient, we can add it to canonical list
+            // and remove it from the rest of the elements
+            // this allows us to match allergens with ingredients one by one
             if ingredients.len() == 1 {
-                let known_bad = ingredients.iter().next().unwrap();
+                let ingredient_matched = ingredients.iter().next().unwrap();
                 for (_, ingredients_mut) in allergen_to_ingredient.iter_mut() {
-                    ingredients_mut.retain(|element| element != known_bad);
+                    ingredients_mut.retain(|element| element != ingredient_matched);
                 }
-                canonical_list.insert(allergen, known_bad);
+                canonical_list.insert(allergen, ingredient_matched);
                 allergen_to_ingredient.remove(allergen);
-                changed = true;
                 break;
             }
-        }
-
-        if !changed {
-            break;
         }
     }
 
@@ -90,4 +89,21 @@ pub fn part2(input: &str) -> String {
     }
     result.pop(); // remove last ','
     result
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn part1() {
+        let input = include_str!("input");
+        assert_eq!(super::part1(input), 2569);
+    }
+    #[test]
+    fn part2() {
+        let input = include_str!("input");
+        assert_eq!(
+            super::part2(input),
+            "vmhqr,qxfzc,khpdjv,gnrpml,xrmxxvn,rfmvh,rdfr,jxh"
+        );
+    }
 }
