@@ -73,7 +73,7 @@ pub fn part2(input: &str) -> String {
             if ingredients.len() == 1 {
                 let ingredient_matched = ingredients.iter().next().unwrap();
                 for (_, ingredients_mut) in allergen_to_ingredient.iter_mut() {
-                    ingredients_mut.retain(|element| element != ingredient_matched);
+                    ingredients_mut.remove(ingredient_matched);
                 }
                 canonical_list.insert(allergen, ingredient_matched);
                 allergen_to_ingredient.remove(allergen);
